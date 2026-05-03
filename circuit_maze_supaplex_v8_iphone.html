@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Circuit Maze - Supaplex Inspired V8 iPhone</title>
+<style>
+  :root{--tile:32px;--bg:#050708;--panel:#111820;--cyan:#64e9ff;--green:#1b7d35;--dark:#050607;--steel:#8b95a3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 50% 20%,#18212b,#050608 70%);color:#e8faff;font-family:Consolas,Monaco,monospace;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .wrap{width:min(100vw,980px);padding:10px;display:grid;grid-template-columns:1fr 210px;gap:10px}
+  .boardShell{background:#080c10;border:3px solid #354250;border-radius:12px;box-shadow:0 0 28px rgba(0,0,0,.8), inset 0 0 22px rgba(80,230,255,.08);padding:10px;position:relative}
+  #board{display:grid;gap:0;margin:auto;background:#000;border:2px solid #1f2b34;image-rendering:pixelated;touch-action:none}
+  .tile{width:var(--tile);height:var(--tile);position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+  .wall{background:linear-gradient(145deg,#aeb5be,#67717e 50%,#333a43);box-shadow:inset 3px 3px 0 rgba(255,255,255,.28), inset -3px -3px 0 rgba(0,0,0,.45)}
+  .wall:after{content:"";position:absolute;inset:7px;border:1px solid rgba(20,25,30,.65);box-shadow:inset 0 0 4px rgba(0,0,0,.6)}
+  .earth{background:var(--green);}
+  .earth:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 1px,transparent 1px 11px),repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 13px)}
+  .earth:after{content:"";position:absolute;left:8px;top:8px;width:5px;height:5px;border-radius:50%;background:#d7d45a;box-shadow:10px 5px #74e2a2,4px 15px #0b5124,17px 18px #d7d45a}
+  .empty{background:#020304;background-image:radial-gradient(circle at 50% 50%,rgba(20,220,255,.08),transparent 52%)}
+  .chip{background:#061014}.chip:before{content:"";position:absolute;inset:7px;background:#111;border:2px solid #b5c4d0;box-shadow:0 0 8px #66e8ff}.chip:after{content:"";position:absolute;left:3px;right:3px;top:14px;height:3px;background:repeating-linear-gradient(90deg,#d7ecff 0 3px,transparent 3px 7px)}
+  .rock{background:#020304}.rock .r{position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle at 30% 22%,#ffffff 0 8%,#d7dde4 9% 25%,#77828c 48%,#3b434b 72%,#11161b 100%);box-shadow:inset -5px -7px 8px rgba(0,0,0,.65),inset 4px 3px 4px rgba(255,255,255,.22),0 2px 4px #000}.rock .r:before{content:"";position:absolute;left:5px;right:5px;top:50%;height:3px;background:#1e252b;box-shadow:0 -8px #39434c,0 8px #39434c}.rock .r:after{content:"";position:absolute;top:5px;bottom:5px;left:50%;width:3px;background:#232b31;box-shadow:-8px 0 #46505a,8px 0 #46505a}
+  .rock.rollR .r{animation:rollR .16s linear infinite}.rock.rollL .r{animation:rollL .16s linear infinite}.rock.falling .r{animation:fallspin .14s linear infinite}
+  @keyframes rollR{to{transform:rotate(360deg)}}@keyframes rollL{to{transform:rotate(-360deg)}}@keyframes fallspin{to{transform:rotate(240deg)}}
+  .gem{background:#020304}.gem.falling:before{animation:gemfall .18s linear infinite}@keyframes gemfall{to{transform:translateY(2px) rotate(12deg)}}.gem:before{content:"";position:absolute;inset:4px;background:conic-gradient(from 0deg,#fff,#ff3333,#d50000,#7a0000,#ff1111,#fff);clip-path:polygon(50% 0,62% 30%,97% 35%,70% 56%,80% 92%,50% 72%,20% 92%,30% 56%,3% 35%,38% 30%);filter:drop-shadow(0 0 10px #ff1010) saturate(1.6)}.gem:after{content:"";position:absolute;left:10px;top:7px;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:8px 3px 0 rgba(255,255,255,.9)}
+  .exit{background:#020304}.exit:before{content:"E";position:absolute;inset:3px;border:2px solid #fff36a;background:linear-gradient(145deg,#ffea31,#be8f00 55%,#5b3e00);color:#101010;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:900;text-shadow:0 1px 0 #fff9a8,0 0 8px #fff000;box-shadow:0 0 18px rgba(255,232,0,.85), inset 0 0 10px rgba(255,255,210,.45)}.exit.locked:before{content:"E";border-color:#6a6324;color:#786b18;box-shadow:none;filter:grayscale(.5) brightness(.65)}
+  .player{background:#020304}.player:before{content:"";position:absolute;inset:2px;border-radius:50%;background:radial-gradient(circle at 30% 22%,#ffb8ae 0 10%,#ff4141 28%,#d30000 55%,#680000 100%);box-shadow:inset -5px -7px 7px rgba(0,0,0,.55),inset 4px 3px 5px rgba(255,255,255,.22),0 0 12px rgba(255,55,55,.85)}.player:after{content:"";position:absolute;left:7px;top:9px;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:13px 0 0 #fff,4px 11px 0 -1px transparent}.player .face{position:absolute;left:8px;right:8px;bottom:8px;height:7px;border-bottom:3px solid #fff;border-radius:0 0 14px 14px;filter:drop-shadow(0 1px 1px #000)}
+  .scissor{background:#020304}.scissor:before{content:"✂";position:absolute;inset:0;color:#d7e7ff;text-shadow:0 0 8px #5cd4ff;display:flex;align-items:center;justify-content:center;font-size:25px;transform:rotate(var(--dir,0deg))}.scissor:after{content:"";position:absolute;inset:5px;border:1px solid rgba(100,220,255,.25);border-radius:50%}
+  .boom{background:#210000!important}.boom:before{content:"";position:absolute;inset:1px;border-radius:50%;background:radial-gradient(circle,#fff 0 14%,#ffd451 15% 33%,#ff4d00 34% 62%,transparent 63%);animation:pulse .45s ease-out infinite}@keyframes pulse{50%{transform:scale(1.25);opacity:.75}}
+  .panel{background:#0b1117;border:3px solid #33414e;border-radius:12px;padding:12px;box-shadow:inset 0 0 18px rgba(90,220,255,.05)}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:2px}.sub{color:#71ff7b;margin-bottom:12px}.stat{background:#05080b;border:2px solid #26333e;border-radius:8px;padding:8px;margin:8px 0}.label{font-size:12px;color:#60eaff}.num{font-size:24px;color:#e7fbff}.btn{width:100%;padding:9px;margin:5px 0;border:2px solid #35495a;background:#111b24;color:#e7fbff;border-radius:8px;font-family:inherit;font-weight:bold} .btn:active{transform:translateY(1px)}
+  #msg{min-height:54px;color:#f7f7c2;line-height:1.35}.controls{display:grid;grid-template-columns:64px 64px 64px 88px;gap:10px;justify-content:center;margin-top:12px;padding:8px;background:#05080b;border:2px solid #26333e;border-radius:12px}.controls:before{content:"MOBILE / TOUCH CONTROLS";grid-column:1 / -1;text-align:center;color:#60eaff;font-size:12px;letter-spacing:1px}.pad{height:52px;border-radius:12px;border:2px solid #50606d;background:#16222c;color:white;font-size:28px}.pad.up{grid-column:2}.pad.left{grid-column:1}.pad.down{grid-column:2}.pad.right{grid-column:3}.pad.dig{grid-column:4;grid-row:2 / span 2;font-size:15px;background:#2a2410;border-color:#ffe44d;color:#ffe44d;font-weight:bold}.pad.dig.active{background:#ffe44d;color:#151000;box-shadow:0 0 14px rgba(255,230,60,.8)}
+  .menuBtn,.closeMenu{display:none}
+  @media(max-width:760px){
+    :root{--tile:min(4.55vw,20px)}
+    html,body{width:100%;height:100%;overflow:hidden;position:fixed}
+    body{align-items:flex-start;justify-content:flex-start;background:#050608;min-height:100svh}
+    .wrap{width:100vw;height:100svh;display:flex;flex-direction:column;gap:0;padding:env(safe-area-inset-top) 5px env(safe-area-inset-bottom);align-items:center;justify-content:flex-start}
+    .boardShell{width:100%;padding:5px 3px 6px;border-width:2px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100svh}
+    #board{max-width:100%;border-width:1px}
+    .tile{border-color:rgba(255,255,255,.03)}
+    .player .face{left:5px;right:5px;bottom:5px;height:5px;border-bottom-width:2px}
+    .player:after{left:5px;top:6px;width:4px;height:4px;box-shadow:9px 0 0 #fff}
+    .exit:before{font-size:17px;inset:2px}
+    .scissor:before{font-size:18px}
+    .gem:after{display:none}
+    .controls{width:100%;max-width:360px;grid-template-columns:74px 74px 74px 96px;grid-template-rows:auto 58px 58px;gap:9px;margin-top:8px;padding:8px;align-self:center}
+    .controls:before{font-size:10px}
+    .pad{height:58px;border-radius:14px;font-size:30px;touch-action:manipulation;user-select:none}
+    .pad.dig{font-size:13px}
+    .panel{position:fixed;z-index:20;top:0;right:0;width:min(86vw,330px);height:100svh;overflow:auto;transform:translateX(105%);transition:transform .18s ease;background:#0b1117;border-left:3px solid #33414e;border-top:0;border-bottom:0;border-right:0;border-radius:0;padding:46px 14px 14px;box-shadow:-18px 0 28px rgba(0,0,0,.6)}
+    .panel.open{transform:translateX(0)}
+    .menuBtn{display:block;position:fixed;z-index:25;top:calc(env(safe-area-inset-top) + 7px);right:8px;width:44px;height:40px;border:2px solid #ffe44d;background:#171b10;color:#ffe44d;border-radius:10px;font-size:25px;font-weight:bold;line-height:1}
+    .closeMenu{display:block;position:absolute;top:8px;right:10px;width:34px;height:34px;border:1px solid #607080;background:#111b24;color:#fff;border-radius:8px;font-size:24px}
+    h1{font-size:21px}.sub{font-size:12px}.num{font-size:20px}
+    .stat{display:block;width:100%;margin:7px 0}.btn{width:100%;font-size:14px}
+    #msg{font-size:12px;line-height:1.3}
+  }
+  @media(max-height:740px) and (max-width:760px){
+    :root{--tile:min(4.35vw,18px)}
+    .controls{grid-template-columns:66px 66px 66px 88px;grid-template-rows:auto 50px 50px;gap:7px;margin-top:5px;padding:6px}
+    .pad{height:50px;font-size:25px}.pad.dig{font-size:12px}
+    .boardShell{padding-top:3px}
+  }
+</style>
+</head>
+<body>
+<button id="menuBtn" class="menuBtn" aria-label="Open game menu">☰</button>
+<div class="wrap">
+  <div class="boardShell"><div id="board"></div><div class="controls"><button class="pad up">▲</button><button class="pad left">◀</button><button class="pad down">▼</button><button class="pad right">▶</button><button class="pad dig">SPACE<br>DIG</button></div></div>
+  <div class="panel" id="sidePanel"><button id="closeMenu" class="closeMenu" aria-label="Close menu">×</button><h1>CIRCUIT MAZE</h1><div class="sub">iPhone layout V8</div><div class="stat"><div class="label">LEVEL</div><div id="level" class="num">1</div></div><div class="stat"><div class="label">INFOTRONS</div><div id="gems" class="num">0/0</div></div><div class="stat"><div class="label">STATUS</div><div id="status" class="num">READY</div></div><button class="btn" id="restart">Restart (R)</button><button class="btn" id="sound">Sound: On</button><button class="btn" id="prev">Prev (P)</button><button class="btn" id="next">Next (N)</button><div id="msg">Collect every red infotron, then enter the bright yellow E exit. Hold Space + direction to dig one adjacent green block without moving.</div></div>
+</div>
+<script>
+const WALL='#', EARTH='.', EMPTY=' ', ROCK='O', GEM='*', EXIT='E', PLAYER='P', SCISSOR='S', CHIP='C';
+const rawLevels=[
+[
+'####################',
+'#P....O....*......E#',
+'#.####..####..####.#',
+'#......*.....O.....#',
+'#..O.....####......#',
+'#.....####....*....#',
+'#..................#',
+'####################'
+],
+[
+'####################',
+'#P....O...#....*..E#',
+'#.####....#..#######',
+'#....*....#........#',
+'#..O...####...O....#',
+'#.........*........#',
+'#....#######.......#',
+'####################'
+],
+[
+'####################',
+'#P...O......*.....E#',
+'#.#####.######.#####',
+'#.....#....*.......#',
+'###O..#..O.....S...#',
+'#.....#............#',
+'#..*.....######....#',
+'####################'
+],
+[
+'####################',
+'#P....O.....*.....E#',
+'#.#######.#######..#',
+'#.....*...#........#',
+'#..O......#..S.....#',
+'#.....#####........#',
+'#..*.....O.....*...#',
+'####################'
+],
+[
+'####################',
+'#P...O.....*......E#',
+'#.#####.#########..#',
+'#.....#....*....#..#',
+'#..O..#..O.....S#..#',
+'#.....#......####..#',
+'#..*.....S.....*...#',
+'####################'
+],
+[
+'####################',
+'#P....*....O......E#',
+'#.######..######...#',
+'#......#..#....#...#',
+'#..O...#..#.*..#...#',
+'#......#..#....#...#',
+'#..*......S.....O..#',
+'####################'
+],
+[
+'####################',
+'#P....O..*.......E.#',
+'#.#######.#######..#',
+'#.....*...#.....#..#',
+'#..O......#..S..#..#',
+'#.....#####.....#..#',
+'#..*.....O...*.....#',
+'####################'
+],
+[
+'####################',
+'#P...O.....*....O.E#',
+'#.#####.#########..#',
+'#.....#....*....#..#',
+'#..O..#..O.....S#..#',
+'#.....#......####..#',
+'#..*..S..O.....*...#',
+'####################'
+],
+[
+'####################',
+'#P....*....O......E#',
+'#.#######.######...#',
+'#.....S...#....#...#',
+'#..O......#.*..#...#',
+'#.....#####....#...#',
+'#..*.....O...S.*...#',
+'####################'
+],
+[
+'####################',
+'#P...O..*....O....E#',
+'#.#####.#########..#',
+'#.....#....*....#..#',
+'#..O..#..O.....S#..#',
+'#..*..#......####..#',
+'#.....S..O.....*...#',
+'####################'
+]
+];
+let levelIndex=0,W,H,grid,player,gemsTotal,gemsGot,gameState='play',rockAnim=new Map(),gemAnim=new Map(),scissors=[],audioCtx=null,soundOn=true,tick=0,explosionTimer=0,spaceHeld=false,mobileDig=false;
+function cloneLevel(){const rows=rawLevels[levelIndex];H=rows.length;W=rows[0].length;grid=rows.map(r=>r.split(''));player=null;scissors=[];gemsTotal=0;gemsGot=0;gameState='play';rockAnim.clear();gemAnim.clear();explosionTimer=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x]===PLAYER){player={x,y};grid[y][x]=EMPTY} if(grid[y][x]===GEM)gemsTotal++; if(grid[y][x]===SCISSOR){scissors.push({x,y,dir:1});grid[y][x]=EMPTY}}render();message('Collect all red infotrons, then enter the bright yellow E exit. Hold Space + direction to dig without moving.');}
+function cls(t){return t===WALL?'wall':t===EARTH?'earth':t===EMPTY?'empty':t===ROCK?'rock':t===GEM?'gem':t===EXIT?'exit':t===CHIP?'chip':'empty'}
+function render(){const b=document.getElementById('board');b.style.gridTemplateColumns=`repeat(${W}, var(--tile))`;b.innerHTML='';const unlocked=gemsGot===gemsTotal;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const d=document.createElement('div');let t=grid[y][x];d.className='tile '+cls(t);if(t===EXIT&&!unlocked)d.classList.add('locked');const key=x+','+y;if(t===ROCK){const r=document.createElement('div');r.className='r';d.appendChild(r);const a=rockAnim.get(key);if(a){d.classList.add(a)}}if(t===GEM&&gemAnim.get(key)==='falling'){d.classList.add('falling')}if(player&&player.x===x&&player.y===y&&gameState==='play'){d.className='tile player';const f=document.createElement('div');f.className='face';d.appendChild(f);}for(const s of scissors){if(s.x===x&&s.y===y&&gameState==='play'){d.className='tile scissor';d.style.setProperty('--dir',(s.dir*90)+'deg')}}if(t==='X')d.className='tile boom';b.appendChild(d)}document.getElementById('level').textContent=String(levelIndex+1).padStart(2,'0');document.getElementById('gems').textContent=`${gemsGot}/${gemsTotal}`;document.getElementById('status').textContent=gameState.toUpperCase();}
+function message(m){document.getElementById('msg').textContent=m}
+function inb(x,y){return x>=0&&y>=0&&x<W&&y<H}function tile(x,y){return inb(x,y)?grid[y][x]:WALL}function setT(x,y,t){if(inb(x,y))grid[y][x]=t}function passableForPlayer(t){return t===EMPTY||t===EARTH||t===GEM||t===EXIT||t===CHIP}
+function isPlayerAt(x,y){return player&&gameState==='play'&&player.x===x&&player.y===y}
+function dig(dx,dy){if(gameState!=='play')return;startAudio();const nx=player.x+dx,ny=player.y+dy;if(tile(nx,ny)===EARTH){setT(nx,ny,EMPTY);beep(320,.035);stepWorld();render();message('Dug adjacent PCB block without moving.')}}
+function move(dx,dy){if(gameState!=='play')return;startAudio();const nx=player.x+dx,ny=player.y+dy,t=tile(nx,ny);if(t===WALL)return;if(t===ROCK){if(dy!==0)return;const bx=nx+dx,by=ny;if(tile(bx,by)!==EMPTY)return;setT(bx,by,ROCK);setT(nx,ny,EMPTY);rockAnim.set(bx+','+by,dx>0?'rollR':'rollL');setTimeout(()=>{rockAnim.delete(bx+','+by);render()},180);player.x=nx;player.y=ny;beep(180,.04);stepWorld();render();return}if(t===EXIT&&gemsGot<gemsTotal){message('Exit locked. Collect every infotron first.');return}if(passableForPlayer(t)){if(t===GEM){gemsGot++;setT(nx,ny,EMPTY);beep(660,.05);message('Infotron collected.')} if(t===EXIT&&gemsGot===gemsTotal){finishLevel();return} player.x=nx;player.y=ny;if(t===EARTH)setT(nx,ny,EMPTY);stepWorld();render();}}
+function stepWorld(){tick++;applyGravity();checkEnemyHit();}
+function applyGravity(){
+let any=false, safety=0;
+do{
+  any=false;
+  const previousFallingRocks=new Set([...rockAnim.entries()].filter(([k,v])=>v==='falling').map(([k])=>k));
+  const previousFallingGems=new Set([...gemAnim.entries()].filter(([k,v])=>v==='falling').map(([k])=>k));
+  const nextRockAnim=new Map();
+  const nextGemAnim=new Map();
+  for(let y=H-2;y>=0;y--){
+    for(let x=1;x<W-1;x++){
+      const current=tile(x,y);
+      if(current!==ROCK && current!==GEM)continue;
+      const isRock=current===ROCK;
+      const wasFalling=isRock ? previousFallingRocks.has(x+','+y) : previousFallingGems.has(x+','+y);
+      const belowIsPlayer=isPlayerAt(x,y+1);
+      if(belowIsPlayer){
+        if(wasFalling){die(isRock?'crushed by a falling rock':'crushed by a falling infotron');return;}
+        continue;
+      }
+      if(tile(x,y+1)===EMPTY){
+        setT(x,y,EMPTY);setT(x,y+1,current);
+        (isRock?nextRockAnim:nextGemAnim).set(x+','+(y+1),'falling');
+        any=true;
+      }else if(isRock && (tile(x,y+1)===ROCK||tile(x,y+1)===WALL) && !isPlayerAt(x-1,y) && !isPlayerAt(x-1,y+1) && tile(x-1,y)===EMPTY&&tile(x-1,y+1)===EMPTY){
+        setT(x,y,EMPTY);setT(x-1,y,ROCK);nextRockAnim.set((x-1)+','+y,'rollL');any=true;
+      }else if(isRock && (tile(x,y+1)===ROCK||tile(x,y+1)===WALL) && !isPlayerAt(x+1,y) && !isPlayerAt(x+1,y+1) && tile(x+1,y)===EMPTY&&tile(x+1,y+1)===EMPTY){
+        setT(x,y,EMPTY);setT(x+1,y,ROCK);nextRockAnim.set((x+1)+','+y,'rollR');any=true;
+      }
+    }
+  }
+  rockAnim=nextRockAnim;
+  gemAnim=nextGemAnim;
+  if(any)safety++;
+}while(any && safety<20 && gameState==='play');
+if(safety>0)setTimeout(()=>{rockAnim.clear();gemAnim.clear();render()},180);
+}
+function moveScissors(){const dirs=[[0,-1],[1,0],[0,1],[-1,0]];for(const s of scissors){const order=[(s.dir+1)%4,s.dir,(s.dir+3)%4,(s.dir+2)%4];for(const nd of order){const [dx,dy]=dirs[nd],nx=s.x+dx,ny=s.y+dy;if(player.x===nx&&player.y===ny){s.x=nx;s.y=ny;s.dir=nd;die('caught by scissors');break}if(tile(nx,ny)===EMPTY){s.x=nx;s.y=ny;s.dir=nd;break}}}}
+function checkEnemyHit(){for(const s of scissors)if(s.x===player.x&&s.y===player.y)die('caught by scissors')}
+function explode(cx,cy,then){gameState='boom';for(let yy=cy-1;yy<=cy+1;yy++)for(let xx=cx-1;xx<=cx+1;xx++)if(inb(xx,yy)&&tile(xx,yy)!==WALL)setT(xx,yy,'X');beep(90,.18);render();setTimeout(then,700)}
+function die(reason){if(gameState!=='play')return;message('Murphy was '+reason+'. Press R to retry.');explode(player.x,player.y,()=>{gameState='dead';render();})}
+function finishLevel(){message('Level complete.');explode(player.x,player.y,()=>{if(levelIndex<rawLevels.length-1){levelIndex++;cloneLevel()}else{gameState='won';message('All levels complete. Press R to restart.');render();}})}
+function restart(){cloneLevel()}function next(){levelIndex=(levelIndex+1)%rawLevels.length;cloneLevel()}function prev(){levelIndex=(levelIndex+rawLevels.length-1)%rawLevels.length;cloneLevel()}
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k===' '){spaceHeld=true;e.preventDefault();return}const act=(dx,dy)=>{if(spaceHeld){dig(dx,dy)}else{move(dx,dy)}};if(['arrowup','w'].includes(k)){e.preventDefault();act(0,-1)}else if(['arrowdown','s'].includes(k)){e.preventDefault();act(0,1)}else if(['arrowleft','a'].includes(k)){e.preventDefault();act(-1,0)}else if(['arrowright','d'].includes(k)){e.preventDefault();act(1,0)}else if(k==='r')restart();else if(k==='n')next();else if(k==='p')prev();});
+window.addEventListener('keyup',e=>{if(e.key===' ')spaceHeld=false});
+function mobileAct(dx,dy){if(mobileDig){dig(dx,dy);mobileDig=false;document.querySelector('.dig').classList.remove('active')}else move(dx,dy)}
+document.querySelector('.up').onclick=()=>mobileAct(0,-1);document.querySelector('.down').onclick=()=>mobileAct(0,1);document.querySelector('.left').onclick=()=>mobileAct(-1,0);document.querySelector('.right').onclick=()=>mobileAct(1,0);document.querySelector('.dig').onclick=()=>{startAudio();mobileDig=!mobileDig;document.querySelector('.dig').classList.toggle('active',mobileDig);message(mobileDig?'SPACE/DIG armed: tap an arrow to remove adjacent green PCB without moving.':'DIG off.');};document.getElementById('restart').onclick=restart;document.getElementById('next').onclick=next;document.getElementById('prev').onclick=prev;
+function startAudio(){if(!soundOn)return;if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();musicLoop();}}
+function beep(freq,dur){if(!soundOn||!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='square';g.gain.value=.035;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}
+function musicLoop(){if(!audioCtx)return;const notes=[220,277,330,277,196,247,294,247];let i=0;setInterval(()=>{if(!soundOn||!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=notes[i++%notes.length];g.gain.value=.018;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.22);o.stop(audioCtx.currentTime+.22)},280)}
+document.getElementById('sound').onclick=()=>{soundOn=!soundOn;document.getElementById('sound').textContent='Sound: '+(soundOn?'On':'Off');startAudio()};
+document.addEventListener('pointerdown',()=>startAudio(),{once:true});
+// Scissors move independently through empty space. The interval is intentionally
+// slower than normal held-key player movement, so Murphy is about twice as fast
+// when an arrow/WASD key is held, but scissors still move while Murphy is idle.
+setInterval(()=>{if(gameState==='play'){moveScissors();applyGravity();checkEnemyHit();render();}},320);
+
+const sidePanel=document.getElementById('sidePanel');
+document.getElementById('menuBtn').onclick=()=>sidePanel.classList.add('open');
+document.getElementById('closeMenu').onclick=()=>sidePanel.classList.remove('open');
+cloneLevel();
+</script>
+</body>
+</html>
